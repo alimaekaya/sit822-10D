@@ -3,38 +3,34 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - testing
-      - main
+      - testing   # run pipeline when code is pushed to "testing"
+  pull_request:
+    branches:
+      - main      # enforce checks before merging into main
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Install dependencies and run tests (Node.js example)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
-
-      # Build Docker image
+      # Step 2: Log in to DockerHub
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      # Step 3: Build Docker image
+      - name: Build Docker image
         run: |
-          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/sit722-ecommerce
-          docker build -t $IMAGE_NAME:${{ github.sha }} .
-          docker push $IMAGE_NAME:${{ github.sha }}
+          cd frontend
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/sit822-frontend:latest .
+
+      # Step 4: Push Docker image to DockerHub
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/sit822-frontend:latest
