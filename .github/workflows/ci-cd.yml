@@ -3,32 +3,90 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - testing   # run pipeline when code is pushed to "testing"
+      - testing
   pull_request:
     branches:
-      - main      # enforce checks before merging into main
+      - main
 
 jobs:
-  build-and-push:
+  test-and-build:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Log in to DockerHub (hardcoded credentials)
+      # Test Product Service
+      - name: Set up Python for Product Service
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies (Product Service)
+        run: |
+          cd backend/product_service
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run tests (Product Service)
+        run: |
+          cd backend/product_service
+          pytest
+
+      # Test Customer Service
+      - name: Set up Python for Customer Service
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies (Customer Service)
+        run: |
+          cd backend/customer_service
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run tests (Customer Service)
+        run: |
+          cd backend/customer_service
+          pytest
+
+      # Test Order Service
+      - name: Set up Python for Order Service
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies (Order Service)
+        run: |
+          cd backend/order_service
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run tests (Order Service)
+        run: |
+          cd backend/order_service
+          pytest
+
+      # Log in to DockerHub
       - name: Log in to DockerHub
-        run: |
-          echo "Muthengi.2010" | docker login -u "alimaekaya" --password-stdin
+        run: echo "Muthengi.2010" | docker login -u "alimaekaya" --password-stdin
 
-      # Step 3: Build Docker image
-      - name: Build Docker image
-        run: |
-          cd frontend
-          docker build -t alimaekaya/sit822-frontend:latest .
+      # Build and push Product Service image
+      - name: Build Product Service Docker image
+        run: docker build -t alimaekaya/sit822-product:latest ./backend/product_service
+      - name: Push Product Service Docker image
+        run: docker push alimaekaya/sit822-product:latest
 
-      # Step 4: Push Docker image
-      - name: Push Docker image
-        run: |
-          docker push alimaekaya/sit822-frontend:latest
+      # Build and push Customer Service image
+      - name: Build Customer Service Docker image
+        run: docker build -t alimaekaya/sit822-customer:latest ./backend/customer_service
+      - name: Push Customer Service Docker image
+        run: docker push alimaekaya/sit822-customer:latest
+
+      # Build and push Order Service image
+      - name: Build Order Service Docker image
+        run: docker build -t alimaekaya/sit822-order:latest ./backend/order_service
+      - name: Push Order Service Docker image
+        run: docker push alimaekaya/sit822-order:latest
+
+      # Build and push Frontend image
+      - name: Build Frontend Docker image
+        run: docker build -t alimaekaya/sit822-frontend:latest ./frontend
+      - name: Push Frontend Docker image
+        run: docker push alimaekaya/sit822-frontend:latest
